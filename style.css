@@ -12,3 +12,14 @@ button{
 input{
     width: 200px;
 }
+
+.playing{
+    color:lightgreen
+}
+#player {
+    border  : 1px solid #ccc;
+    padding : 20px;
+    border-radius: 10px;
+    display: inline-block;
+    
+}

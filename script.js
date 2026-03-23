@@ -32,3 +32,12 @@ document.getElementById('prev').onclick = () => {
     loadTrack()
     audio.onplay()
 }
+
+//volume logic
+
+document.getElementById("volume").oninput = (e) => {
+    audio.volume = e.target.value
+} 
+
+audio.onplay = () => title.classList.add('playing')
+audio.onpause = () => title.classList.remove('playing')
