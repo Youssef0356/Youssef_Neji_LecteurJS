@@ -18,19 +18,19 @@ function loadTrack(){
 
 
 document.getElementById('play').onclick = () => {
-    if (audio.paused) audio.onplay()
+    if (audio.paused) audio.play()
         else audio.pause()
 
 }
 document.getElementById('next').onclick = () => {
     index = (index+1) % tracks.length
     loadTrack()
-    audio.onplay()
+    audio.play()
 }
 document.getElementById('prev').onclick = () => {
-    index = (index-1) % tracks.length
+    index = (index - 1 + tracks.length) % tracks.length
     loadTrack()
-    audio.onplay()
+    audio.play()
 }
 
 //volume logic
