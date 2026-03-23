@@ -15,6 +15,7 @@ Un lecteur audio simple et élégant construit avec du JavaScript vanilla. Il pe
 
 - **Lecture / Pause** : Contrôle simple de la lecture.
 - **Navigation** : Boutons "Suivant" et "Précédent" pour parcourir les pistes.
+- **Barre de progression** : Visualisation du temps écoulé et possibilité de naviguer dans la piste.
 - **Gestion du Volume** : Curseur pour ajuster le niveau sonore en temps réel.
 - **Chargement Dynamique** : Les pistes sont chargées depuis `tracks.json`.
 - **Indicateur de lecture** : Le titre de la piste change de couleur lorsqu'elle est en cours de lecture.
