@@ -41,8 +41,10 @@ if ($uri === '/api/songs/upload' && $method === 'POST') {
 
     $stmt = $pdo->prepare("INSERT INTO songs (title, filename) VALUES (?, ?)");
     $stmt->execute([$title, $filename]);
+    $id = $pdo->lastInsertId();
 
     echo json_encode([
+        'id'    => (int)$id,
         'title' => $title,
         'url'   => '/uploads/music/' . $filename
     ]);

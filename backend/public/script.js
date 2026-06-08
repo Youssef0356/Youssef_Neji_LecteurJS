@@ -56,13 +56,11 @@ function deleteSong(i) {
         })
 }
 
-// Play / Pause
 document.getElementById('play').onclick = () => {
     if (audio.paused && tracks.length > 0) audio.play()
     else audio.pause()
 }
 
-// Next
 document.getElementById('next').onclick = () => {
     if (tracks.length === 0) return
     index = (index + 1) % tracks.length
@@ -70,7 +68,6 @@ document.getElementById('next').onclick = () => {
     audio.play()
 }
 
-// Previous
 document.getElementById('prev').onclick = () => {
     if (tracks.length === 0) return
     index = (index - 1 + tracks.length) % tracks.length
@@ -78,28 +75,26 @@ document.getElementById('prev').onclick = () => {
     audio.play()
 }
 
-// Progress bar — audio updates the slider
+//heka el khat lazra9 
 audio.ontimeupdate = () => {
     if (audio.duration) {
         progress.value = (audio.currentTime / audio.duration) * 100
     }
 }
 
-// Progress bar — user drags the slider
+// kif test3ml el slider
 progress.oninput = (e) => {
     audio.currentTime = (e.target.value / 100) * audio.duration
 }
 
-// Volume
 document.getElementById('volume').oninput = (e) => {
     audio.volume = e.target.value
 }
 
-// Visual feedback when playing
+//class samineha playing fiha style
 audio.onplay  = () => title.classList.add('playing')
 audio.onpause = () => title.classList.remove('playing')
 
-// Upload a song
 document.getElementById('uploadBtn').onclick = () => {
     const fileInput = document.getElementById('fileInput')
     const status    = document.getElementById('uploadStatus')
