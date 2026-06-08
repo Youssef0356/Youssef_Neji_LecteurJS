@@ -1,0 +1,15 @@
+# --- Sensitive configuration ---
+config/database.php
+
+# --- Uploaded files ---
+public/uploads/
+
+# --- OS / Editor artifacts ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- PHP / Composer ---
+vendor/
+composer.lock
