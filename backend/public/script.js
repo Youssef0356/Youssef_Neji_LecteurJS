@@ -5,7 +5,6 @@ let audio    = document.getElementById('audio')
 let title    = document.getElementById('title')
 let progress = document.getElementById('progress')
 
-// Load all songs on page start
 fetch('/api/songs')
     .then(res => res.json())
     .then(data => {
@@ -14,14 +13,12 @@ fetch('/api/songs')
         if (tracks.length > 0) loadTrack()
     })
 
-// Load the current track into the player
 function loadTrack() {
     audio.src          = tracks[index].url
     title.textContent  = tracks[index].title
     showPlaylist()
 }
 
-// Build the playlist HTML
 function showPlaylist() {
     const list = document.getElementById('playlist')
 
@@ -33,14 +30,12 @@ function showPlaylist() {
     `).join('')
 }
 
-// Play a song by index
 function playAt(i) {
     index = i
     loadTrack()
     audio.play()
 }
 
-// Delete a song
 function deleteSong(i) {
     const formData = new FormData()
     formData.append('id', tracks[i].id)

@@ -49,7 +49,6 @@ if ($uri === '/api/songs/upload' && $method === 'POST') {
     exit;
 }
 
-// ── DELETE /api/songs/delete → remove a song ───────────────────────────────
 if ($uri === '/api/songs/delete' && $method === 'POST') {
 
     header('Content-Type: application/json');
@@ -61,7 +60,6 @@ if ($uri === '/api/songs/delete' && $method === 'POST') {
         exit;
     }
 
-    // Get the filename from DB so we can delete the file too
     $stmt = $pdo->prepare("SELECT filename FROM songs WHERE id = ?");
     $stmt->execute([$id]);
     $song = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -71,13 +69,11 @@ if ($uri === '/api/songs/delete' && $method === 'POST') {
         exit;
     }
 
-    // Delete the file from disk
     $filepath = __DIR__ . '/uploads/music/' . $song['filename'];
     if (file_exists($filepath)) {
         unlink($filepath);
     }
 
-    // Delete from database
     $stmt = $pdo->prepare("DELETE FROM songs WHERE id = ?");
     $stmt->execute([$id]);
 
@@ -98,7 +94,6 @@ if ($uri === '/api/songs/delete' && $method === 'POST') {
 <body>
     <h1>Audio Player</h1>
 
-    <!-- Upload section -->
     <div id="upload-container">
         <h3>Upload a song</h3>
         <input type="file" id="fileInput" accept="audio/*">
@@ -106,13 +101,11 @@ if ($uri === '/api/songs/delete' && $method === 'POST') {
         <p id="uploadStatus"></p>
     </div>
 
-    <!-- Song list -->
     <div id="song-list">
         <h3>Playlist</h3>
         <ul id="playlist"></ul>
     </div>
 
-    <!-- Audio player -->
     <div id="player">
         <h2 id="playing-title">Now Playing</h2>
         <p id="title">No song selected</p>
