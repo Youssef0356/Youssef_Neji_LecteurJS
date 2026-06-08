@@ -2,63 +2,58 @@
 
 require_once __DIR__ . '/../config/database.php';
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri    = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Fetch all songs
+// ── GET /api/songs → return all songs as JSON ──────────────────────────────
 if ($uri === '/api/songs' && $method === 'GET') {
-    $stmt = $pdo->query("SELECT id, title, filename FROM songs ORDER BY created_at DESC");
+
+    $stmt  = $pdo->query("SELECT id, title, filename FROM songs ORDER BY created_at DESC");
     $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $songs = array_map(function ($s) {
-        $s['url'] = '/uploads/music/' . rawurlencode($s['filename']);
-        return $s;
-    }, $songs);
+
+    // Add a playable URL to each song
+    foreach ($songs as &$song) {
+        $song['url'] = '/uploads/music/' . $song['filename'];
+    }
+
     header('Content-Type: application/json');
     echo json_encode($songs);
     exit;
 }
 
-// Upload a song
+// ── POST /api/songs/upload → save an uploaded song ─────────────────────────
 if ($uri === '/api/songs/upload' && $method === 'POST') {
+
     header('Content-Type: application/json');
 
-    if (!isset($_FILES['file'])) {
-        http_response_code(400);
+    // 1. Was a file sent?
+    if (empty($_FILES['file'])) {
         echo json_encode(['error' => 'No file sent']);
         exit;
     }
 
-    $error = $_FILES['file']['error'];
-    if ($error !== UPLOAD_ERR_OK) {
-        $messages = [
-            UPLOAD_ERR_INI_SIZE => 'File too large (PHP limit)',
-            UPLOAD_ERR_FORM_SIZE => 'File too large (form limit)',
-            UPLOAD_ERR_PARTIAL => 'Partial upload',
-            UPLOAD_ERR_NO_FILE => 'No file selected',
-        ];
-        http_response_code(400);
-        echo json_encode(['error' => $messages[$error] ?? 'Upload failed']);
+    // 2. Did the upload succeed?
+    if ($_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['error' => 'Upload failed']);
         exit;
     }
 
-    $file = $_FILES['file'];
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $title = pathinfo($file['name'], PATHINFO_FILENAME);
-    $filename = $title . '.' . $ext;
+    // 3. Get the original file name and title
+    $filename = $_FILES['file']['name'];
+    $title    = pathinfo($filename, PATHINFO_FILENAME); // name without extension
+
+    // 4. Move the file to our uploads folder
     $dest = __DIR__ . '/uploads/music/' . $filename;
+    move_uploaded_file($_FILES['file']['tmp_name'], $dest);
 
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Save failed']);
-        exit;
-    }
-
+    // 5. Save song info in the database
     $stmt = $pdo->prepare("INSERT INTO songs (title, filename) VALUES (?, ?)");
     $stmt->execute([$title, $filename]);
 
+    // 6. Send back the song data so JS can use it immediately
     echo json_encode([
         'title' => $title,
-        'url' => '/uploads/music/' . rawurlencode($filename)
+        'url'   => '/uploads/music/' . $filename
     ]);
     exit;
 }
