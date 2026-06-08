@@ -109,10 +109,17 @@ button:active {
 }
 
 #playlist li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 10px 15px;
     border-bottom: 1px solid #eee;
-    cursor: pointer;
     transition: background 0.2s;
+}
+
+#playlist li span {
+    flex: 1;
+    cursor: pointer;
 }
 
 #playlist li:hover {
@@ -122,4 +129,21 @@ button:active {
 #playlist li.active {
     background: #3498db;
     color: white;
+}
+
+.delete-btn {
+    background: transparent;
+    color: #e74c3c;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.delete-btn:hover {
+    background: #fdecea;
+    color: #c0392b;
 }

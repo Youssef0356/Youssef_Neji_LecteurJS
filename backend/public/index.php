@@ -5,13 +5,11 @@ require_once __DIR__ . '/../config/database.php';
 $uri    = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-// ── GET /api/songs → return all songs as JSON ──────────────────────────────
 if ($uri === '/api/songs' && $method === 'GET') {
 
     $stmt  = $pdo->query("SELECT id, title, filename FROM songs ORDER BY created_at DESC");
     $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Add a playable URL to each song
     foreach ($songs as &$song) {
         $song['url'] = '/uploads/music/' . $song['filename'];
     }
@@ -21,40 +19,69 @@ if ($uri === '/api/songs' && $method === 'GET') {
     exit;
 }
 
-// ── POST /api/songs/upload → save an uploaded song ─────────────────────────
 if ($uri === '/api/songs/upload' && $method === 'POST') {
 
     header('Content-Type: application/json');
 
-    // 1. Was a file sent?
     if (empty($_FILES['file'])) {
         echo json_encode(['error' => 'No file sent']);
         exit;
     }
 
-    // 2. Did the upload succeed?
     if ($_FILES['file']['error'] !== UPLOAD_ERR_OK) {
         echo json_encode(['error' => 'Upload failed']);
         exit;
     }
 
-    // 3. Get the original file name and title
     $filename = $_FILES['file']['name'];
-    $title    = pathinfo($filename, PATHINFO_FILENAME); // name without extension
+    $title    = pathinfo($filename, PATHINFO_FILENAME);
 
-    // 4. Move the file to our uploads folder
     $dest = __DIR__ . '/uploads/music/' . $filename;
     move_uploaded_file($_FILES['file']['tmp_name'], $dest);
 
-    // 5. Save song info in the database
     $stmt = $pdo->prepare("INSERT INTO songs (title, filename) VALUES (?, ?)");
     $stmt->execute([$title, $filename]);
 
-    // 6. Send back the song data so JS can use it immediately
     echo json_encode([
         'title' => $title,
         'url'   => '/uploads/music/' . $filename
     ]);
+    exit;
+}
+
+// ── DELETE /api/songs/delete → remove a song ───────────────────────────────
+if ($uri === '/api/songs/delete' && $method === 'POST') {
+
+    header('Content-Type: application/json');
+
+    $id = $_POST['id'] ?? null;
+
+    if (!$id) {
+        echo json_encode(['error' => 'No song ID given']);
+        exit;
+    }
+
+    // Get the filename from DB so we can delete the file too
+    $stmt = $pdo->prepare("SELECT filename FROM songs WHERE id = ?");
+    $stmt->execute([$id]);
+    $song = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$song) {
+        echo json_encode(['error' => 'Song not found']);
+        exit;
+    }
+
+    // Delete the file from disk
+    $filepath = __DIR__ . '/uploads/music/' . $song['filename'];
+    if (file_exists($filepath)) {
+        unlink($filepath);
+    }
+
+    // Delete from database
+    $stmt = $pdo->prepare("DELETE FROM songs WHERE id = ?");
+    $stmt->execute([$id]);
+
+    echo json_encode(['success' => true]);
     exit;
 }
 

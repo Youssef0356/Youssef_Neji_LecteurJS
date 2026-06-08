@@ -38,13 +38,42 @@ function renderPlaylist() {
     list.innerHTML = ''
     tracks.forEach((track, i) => {
         const li = document.createElement('li')
-        li.textContent = track.title
-        li.dataset.index = i
-        li.onclick = () => {
+
+        // Song title — click to play
+        const span = document.createElement('span')
+        span.textContent = track.title
+        span.onclick = () => {
             index = i
             loadTrack()
             audio.play()
         }
+
+        // Delete button
+        const btn = document.createElement('button')
+        btn.textContent = '✕'
+        btn.className = 'delete-btn'
+        btn.onclick = () => {
+            const formData = new FormData()
+            formData.append('id', track.id)
+
+            fetch('/api/songs/delete', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        tracks.splice(i, 1)          // remove from array
+                        if (index >= tracks.length) index = 0
+                        renderPlaylist()              // rebuild list
+                        if (tracks.length > 0) loadTrack()
+                        else {
+                            audio.src = ''
+                            document.getElementById('title').textContent = 'No song selected'
+                        }
+                    }
+                })
+        }
+
+        li.appendChild(span)
+        li.appendChild(btn)
         list.appendChild(li)
     })
     highlightCurrent()
