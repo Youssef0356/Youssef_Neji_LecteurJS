@@ -1,89 +1,64 @@
-// Track data
 let tracks = []
-let index = 0
+let index  = 0
 
-// Fetch songs from DB
-fetch("/api/songs").then(res => res.json()).then(data => {
-    tracks = data.map(song => ({
-        id: song.id,
-        title: song.title,
-        src: song.url
-    }));
-
-    renderPlaylist()
-
-    if (tracks.length > 0) {
-        loadTrack()
-    } else {
-        document.getElementById('title').textContent = "No songs available";
-    }
-})
-
-// DOM references
-let audio = document.getElementById('audio')
-let title = document.getElementById('title')
+let audio    = document.getElementById('audio')
+let title    = document.getElementById('title')
 let progress = document.getElementById('progress')
 
-// Load a track
+// Load all songs on page start
+fetch('/api/songs')
+    .then(res => res.json())
+    .then(data => {
+        tracks = data
+        showPlaylist()
+        if (tracks.length > 0) loadTrack()
+    })
+
+// Load the current track into the player
 function loadTrack() {
-    if (tracks.length === 0) return;
-    audio.src = tracks[index].src
-    title.textContent = tracks[index].title
-    highlightCurrent()
+    audio.src          = tracks[index].url
+    title.textContent  = tracks[index].title
+    showPlaylist()
 }
 
-// Build playlist
-function renderPlaylist() {
+// Build the playlist HTML
+function showPlaylist() {
     const list = document.getElementById('playlist')
-    list.innerHTML = ''
-    tracks.forEach((track, i) => {
-        const li = document.createElement('li')
 
-        // Song title — click to play
-        const span = document.createElement('span')
-        span.textContent = track.title
-        span.onclick = () => {
-            index = i
-            loadTrack()
-            audio.play()
-        }
-
-        // Delete button
-        const btn = document.createElement('button')
-        btn.textContent = '✕'
-        btn.className = 'delete-btn'
-        btn.onclick = () => {
-            const formData = new FormData()
-            formData.append('id', track.id)
-
-            fetch('/api/songs/delete', { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        tracks.splice(i, 1)          // remove from array
-                        if (index >= tracks.length) index = 0
-                        renderPlaylist()              // rebuild list
-                        if (tracks.length > 0) loadTrack()
-                        else {
-                            audio.src = ''
-                            document.getElementById('title').textContent = 'No song selected'
-                        }
-                    }
-                })
-        }
-
-        li.appendChild(span)
-        li.appendChild(btn)
-        list.appendChild(li)
-    })
-    highlightCurrent()
+    list.innerHTML = tracks.map((track, i) => `
+        <li class="${i === index ? 'active' : ''}">
+            <span onclick="playAt(${i})">${track.title}</span>
+            <button class="delete-btn" onclick="deleteSong(${i})">✕</button>
+        </li>
+    `).join('')
 }
 
-// Highlight active song
-function highlightCurrent() {
-    document.querySelectorAll('#playlist li').forEach((li, i) => {
-        li.classList.toggle('active', i === index)
-    })
+// Play a song by index
+function playAt(i) {
+    index = i
+    loadTrack()
+    audio.play()
+}
+
+// Delete a song
+function deleteSong(i) {
+    const formData = new FormData()
+    formData.append('id', tracks[i].id)
+
+    fetch('/api/songs/delete', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                tracks.splice(i, 1)
+                if (index >= tracks.length) index = 0
+                if (tracks.length > 0) loadTrack()
+                else {
+                    audio.src             = ''
+                    title.textContent     = 'No song selected'
+                    showPlaylist()
+                }
+            }
+        })
 }
 
 // Play / Pause
@@ -92,78 +67,72 @@ document.getElementById('play').onclick = () => {
     else audio.pause()
 }
 
-// Next / Previous
+// Next
 document.getElementById('next').onclick = () => {
-    if (tracks.length === 0) return;
+    if (tracks.length === 0) return
     index = (index + 1) % tracks.length
     loadTrack()
     audio.play()
 }
+
+// Previous
 document.getElementById('prev').onclick = () => {
-    if (tracks.length === 0) return;
+    if (tracks.length === 0) return
     index = (index - 1 + tracks.length) % tracks.length
     loadTrack()
     audio.play()
 }
 
-// Progress bar
+// Progress bar — audio updates the slider
 audio.ontimeupdate = () => {
     if (audio.duration) {
         progress.value = (audio.currentTime / audio.duration) * 100
     }
 }
+
+// Progress bar — user drags the slider
 progress.oninput = (e) => {
     audio.currentTime = (e.target.value / 100) * audio.duration
 }
 
-// Volume control
-document.getElementById("volume").oninput = (e) => {
+// Volume
+document.getElementById('volume').oninput = (e) => {
     audio.volume = e.target.value
 }
 
-// Visual feedback
-audio.onplay = () => title.classList.add('playing')
+// Visual feedback when playing
+audio.onplay  = () => title.classList.add('playing')
 audio.onpause = () => title.classList.remove('playing')
 
-// Upload handler
+// Upload a song
 document.getElementById('uploadBtn').onclick = () => {
-    const fileInput = document.getElementById('fileInput');
-    const status = document.getElementById('uploadStatus');
+    const fileInput = document.getElementById('fileInput')
+    const status    = document.getElementById('uploadStatus')
 
     if (fileInput.files.length === 0) {
-        status.textContent = "Please select a file.";
-        return;
+        status.textContent = 'Please select a file.'
+        return
     }
 
-    const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData()
+    formData.append('file', fileInput.files[0])
+    status.textContent = 'Uploading...'
 
-    status.textContent = "Uploading...";
-
-    fetch('/api/songs/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            status.textContent = "Error: " + data.error;
-        } else {
-            status.textContent = "Song added!";
-            tracks.push({
-                title: data.title,
-                src: data.url
-            });
-            index = tracks.length - 1;
-            renderPlaylist();
-            loadTrack();
-            audio.play();
-            fileInput.value = "";
-        }
-    })
-    .catch(err => {
-        status.textContent = "Network error.";
-        console.error(err);
-    });
+    fetch('/api/songs/upload', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                status.textContent = 'Error: ' + data.error
+            } else {
+                status.textContent = 'Song added!'
+                tracks.push({ id: data.id, title: data.title, url: data.url })
+                index = tracks.length - 1
+                loadTrack()
+                audio.play()
+                fileInput.value = ''
+            }
+        })
+        .catch(() => {
+            status.textContent = 'Network error.'
+        })
 }
